@@ -92,6 +92,7 @@ class Httpc(cmd.Cmd):
         :test: get 'http://httpbin.org/get?course=networking&assignment=1'
         :test: get -v 'http://httpbin.org/get?course=networking&assignment=1'
         :test: get -h key:value 'http://httpbin.org/get?course=networking&assignment=1'
+        :test: get -h key1:value1 key2:value2 'http://httpbin.org/get?course=networking&assignment=1'
         '''
         # if not cmd: self.do_help('get')
         
@@ -102,17 +103,19 @@ class Httpc(cmd.Cmd):
         parser_get.usage = parser_get.prog + ' [-v] [-h key:value] URL'
         # add optional argument
         parser_get.add_argument('-v','--verbose',help='Prints the detail of the response such as protocol, status, and headers.', action='store_true' )
-        parser_get.add_argument('-h','--header',help='Associates headers to HTTP request with the format \'key:value\' ')
+        parser_get.add_argument('-h','--header',help='Associates headers to HTTP request with the format \'key:value\' ', nargs='+' )
 
-        # add position argument URL
-        parser_get.add_argument('url',help='a valid http url')
-        
-        args = parser_get.parse_args(cmd.split())
-        # test
+        # add positional argument URL, fix bug : the no expect argument : URL 
+        parser_get.add_argument('url',help='a valid http url',default=cmd.split()[-1],nargs='?' )
+        # print(cmd.split()[-1])
+        # print(cmd.split()[:-1])
+        print("[Debug] cmd.split() is : " + str(cmd.split()) )
+
+        args = parser_get.parse_args(cmd.split()[:-1])
+        # print parser help
         # parser_get.print_help()
-        # print(args)
+        print("[Debug] args are : " + str(args) )
         # print(args.url)
-        # print('args.v' in locals().keys())
 
         # Check the URL is valid
         if self._is_valid_url(args.url):
@@ -143,7 +146,11 @@ class Httpc(cmd.Cmd):
                 data = b''
 
                 if args.header and self._is_valid_header(args.header):
-                    request = HttpRequest(hostname,url.path, url.query, args.header)
+                    # case: one more key:value headers
+                    headers = ''
+                    for i in range(len(args.header)):
+                        headers += args.header[i] + '\r\n'
+                    request = HttpRequest(hostname,url.path, url.query, headers)
                 else:
                     request = HttpRequest(hostname,url.path, url.query,)   
                 request = request.get_request_get()
@@ -162,7 +169,7 @@ class Httpc(cmd.Cmd):
             finally:      
                 client_socket.close()
 
-            # Output depends on diffenrent requirements
+            # Output depends on diffenrent requirements (-v)
             if args.verbose:
                 print('--- Details ---')
                 print(result.content)
@@ -193,11 +200,17 @@ class Httpc(cmd.Cmd):
         :param: header
         :return: boolean
         '''
-        if re.match(r'(.+:.+)',header):
-            print('[Debug] valid header : ' + header)
-            return True
-        else: 
-            print('[Debug] invalid header : ' + header)
+        # case considers one more key:value
+        if len(header) >= 1:
+            for i in range(len(header)):
+                if re.match(r'(\w+:\w+)',header[i]):
+                    print('[Debug] valid header : ' + header[i])
+                    return True
+                else: 
+                    print('[Debug] invalid header : ' + header[i])
+                    return False
+        else:
+            print('[Debug] no header ')
             return False
 
 
