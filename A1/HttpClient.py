@@ -16,7 +16,7 @@ class HttpRequest:
         The method is to initial the request.
         :param: host : hostname
         :param: path : '/get' or '/post'
-        :param: query : such as 'course=networking&assignment=1'
+        :param: query : GET is like as 'course=networking&assignment=1', POST is like '{"Assignment:1"}'
         :param: headers : 'key:value' (eg. 'User-Agent':'Concordia-HTTP/1.0')
         '''
         self.host = host
@@ -32,15 +32,29 @@ class HttpRequest:
         if self.query:
             self.resource += '?' + self.query
 
-    def get_request_get(self):
+    def get_request(self, request_method):
         '''
         The method is to return the request for GET.
+        :param: request_method : GET or POST
         :return: request_get
         '''
-        request_get = ('GET ' + self.resource + ' HTTP/1.0\r\n' + \
+        if request_method == 'GET':
+            request = ('GET ' + self.resource + ' HTTP/1.0\r\n' + \
                     self.headers + \
                     'Host: ' + self.host + '\r\n\r\n')
-        return request_get
+        elif request_method == 'POST':
+            # POST query means infos of (-d) data or (-f) file
+            request = ('POST ' + self.path + ' HTTP/1.0\r\n' + \
+                    self.headers \
+                    + 'Content-Length: ' + str(len(self.query)) + '\r\n' \
+                    + 'Host: ' + self.host + '\r\n\r\n' + '"Assignment:1"'
+                    #  + 'Connection: close\r\n\r\n'
+                    ) 
+            print('[Debug] Post query is : ' + self.query + '\n[Debug] Length is : ' + str(len(self.query)))
+        else:
+            print(f'[Debug] Invalid request method : {request_method}')
+            return None
+        return request
 
 
 class HttpResponse:
