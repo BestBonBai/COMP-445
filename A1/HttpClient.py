@@ -47,7 +47,7 @@ class HttpRequest:
             request = ('POST ' + self.path + ' HTTP/1.0\r\n' + \
                     self.headers \
                     + 'Content-Length: ' + str(len(self.query)) + '\r\n' \
-                    + 'Host: ' + self.host + '\r\n\r\n' + '"Assignment:1"'
+                    + 'Host: ' + self.host + '\r\n\r\n'
                     #  + 'Connection: close\r\n\r\n'
                     ) 
             print('[Debug] Post query is : ' + self.query + '\n[Debug] Length is : ' + str(len(self.query)))
