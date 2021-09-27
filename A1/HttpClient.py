@@ -44,10 +44,13 @@ class HttpRequest:
                     self.headers + \
                     'Host: ' + self.host + '\r\n\r\n')
         elif request_method == 'POST':
-            # POST query means infos of (-d) data or (-f) file
+            # HTTP POST Request
+            # get content length from the body (query) exists
+            content_length = str(len(self.query))
+            # POST query means infos of (-d) data or (-f) file (Body data)    
             request = ('POST ' + self.path + ' HTTP/1.0\r\n' + \
                     self.headers \
-                    + 'Content-Length: ' + str(len(self.query)) + '\r\n' \
+                    + 'Content-Length: ' + content_length + '\r\n' \
                     + 'Host: ' + self.host + '\r\n\r\n'
                     # + 'Connection: close\r\n\r\n'
                     ) 
@@ -56,7 +59,7 @@ class HttpRequest:
             # data_dict = json.loads(self.query)
             # request += json.dumps(data_dict)
 
-            # print(f'[Debug] request is : \n {request}')
+            print(f'[Debug] request is : \n {request}')
             # print('[Debug] Post query is : ' + self.query + '\n[Debug] Length is : ' + str(len(self.query)))
         else:
             print(f'[Debug] Invalid request method : {request_method}')

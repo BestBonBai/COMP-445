@@ -185,21 +185,39 @@ class Httpc(cmd.Cmd):
                 request = HttpRequest(url_parsed.hostname, url_parsed.path, url_parsed.query, headers)
             else:
                 # POST query means infos of (-d) data or (-f) file
-                if args.data:
+                if args.data and args.file:
+                    # data and file cannot be used together
+                    print('[Error] Either [-d] or [-f] can be used but not both.')
+                    sys.exit(0)
+                elif args.data and not args.file:
                     request = HttpRequest(url_parsed.hostname, url_parsed.path, args.data, headers)
-                else:
+                elif not args.data and args.file:
                     # TODO: get the info of files
-                    pass
+                    with open(args.file,'r') as f:
+                        # read() all infos
+                        file_info = f.read()
+                    request = HttpRequest(url_parsed.hostname, url_parsed.path, file_info, headers)
+                else:
+                    request = HttpRequest(url_parsed.hostname, url_parsed.path, '', headers)
         else:
             if request_method == 'GET':
                 request = HttpRequest(url_parsed.hostname, url_parsed.path, url_parsed.query,)  
             else: 
                 # POST query means infos of (-d) data or (-f) file
-                if args.data:
+                if args.data and args.file:
+                    # data and file cannot be used together
+                    print('[Error] Either [-d] or [-f] can be used but not both.')
+                    sys.exit(0)
+                if args.data and not args.file :
                     request = HttpRequest(url_parsed.hostname, url_parsed.path, args.data,)
-                else:
+                elif not args.data and args.file :
                     # TODO: get the info of files
-                    pass
+                    with open(args.file,'r') as f:
+                        # read() all infos
+                        file_info = f.read()
+                    request = HttpRequest(url_parsed.hostname, url_parsed.path, file_info, )
+                else:
+                    request = HttpRequest(url_parsed.hostname, url_parsed.path, '', )
         # get request
         request = request.get_request(request_method)
 
@@ -259,7 +277,10 @@ class Httpc(cmd.Cmd):
         The method is to executes a HTTP POST request for a given URL with inline data or from file.
         :param: cmd : command from console
         :test: httpc post -h Content-Type:application/json -d '{"Assignment": 1}' http://httpbin.org/post
+        :test: httpc post -v -h Content-Type:application/json http://httpbin.org/post
         :test: httpc post -v -h Content-Type:application/json -d '{"Assignment": 1}' http://httpbin.org/post
+        :test: httpc post -v -h Content-Type:application/json -f test-file.txt http://httpbin.org/post
+        :test: httpc post -v -h Content-Type:application/json -d '{"Test": "Conflict"}' -f test-file.txt http://httpbin.org/post
         '''
         # parse the command from console
         parser_post = argparse.ArgumentParser(description='Post executes a HTTP POST request for a given URL with inline data or from file.'
@@ -267,10 +288,10 @@ class Httpc(cmd.Cmd):
         parser_post.prog = 'httpc post'
         parser_post.usage = parser_post.prog + ' [-v] [-h key:value] [-d inline-data] [-f file] URL'
         parser_post.epilog = 'Either [-d] or [-f] can be used but not both. '
-        # add_mutually_exclusive_group
-        
+        # add arguments   
         parser_post.add_argument('-v','--verbose',help='Prints the detail of the response such as protocol, status, and headers.', action='store_true' )
         parser_post.add_argument('-h', '--header', help='Associates headers to HTTP request with the format \'key:value\' ', nargs='+')
+        # add_mutually_exclusive_group
         parser_post.add_mutually_exclusive_group()
         parser_post.add_argument('-d','--data',help='Associates an inline data to the body HTTP POST request.')
         parser_post.add_argument('-f','--file',help='Associates the content of a file to the body HTTP POST request.')
