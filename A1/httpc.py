@@ -259,6 +259,7 @@ class Httpc(cmd.Cmd):
         The method is to executes a HTTP POST request for a given URL with inline data or from file.
         :param: cmd : command from console
         :test: httpc post -h Content-Type:application/json -d '{"Assignment": 1}' http://httpbin.org/post
+        :test: httpc post -v -h Content-Type:application/json -d '{"Assignment": 1}' http://httpbin.org/post
         '''
         # parse the command from console
         parser_post = argparse.ArgumentParser(description='Post executes a HTTP POST request for a given URL with inline data or from file.'

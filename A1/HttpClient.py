@@ -5,7 +5,7 @@ COMP 445 lab assignment 1
 @ date: 2021-09-20
 @ version: 1.0.0
 '''
-
+import json
 class HttpRequest:
     '''
     The class is to deal with the request of Get and Post.
@@ -26,7 +26,8 @@ class HttpRequest:
         self.headers = 'User-Agent: Concordia-HTTP/1.0\r\n'
         if self.headers == headers: pass
         else:
-            self.headers += headers + '\r\n'
+            # fix post bug : delete the '\r\n'
+            self.headers += headers 
         # resource is combined with the path and query 
         self.resource = self.path 
         if self.query:
@@ -48,9 +49,15 @@ class HttpRequest:
                     self.headers \
                     + 'Content-Length: ' + str(len(self.query)) + '\r\n' \
                     + 'Host: ' + self.host + '\r\n\r\n'
-                    #  + 'Connection: close\r\n\r\n'
+                    # + 'Connection: close\r\n\r\n'
                     ) 
-            print('[Debug] Post query is : ' + self.query + '\n[Debug] Length is : ' + str(len(self.query)))
+            # add Body Http Post request, use query directly instead of json methods
+            request += self.query
+            # data_dict = json.loads(self.query)
+            # request += json.dumps(data_dict)
+
+            # print(f'[Debug] request is : \n {request}')
+            # print('[Debug] Post query is : ' + self.query + '\n[Debug] Length is : ' + str(len(self.query)))
         else:
             print(f'[Debug] Invalid request method : {request_method}')
             return None
