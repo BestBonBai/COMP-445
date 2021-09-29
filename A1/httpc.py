@@ -98,6 +98,7 @@ class Httpc(cmd.Cmd):
         :test: get -h key:value 'http://httpbin.org/get?course=networking&assignment=1'
         :test: get -h key1:value1 key2:value2 'http://httpbin.org/get?course=networking&assignment=1'
         :test Redirection: get -v 'http://httpbin.org/status/301'
+        :test -o filename: get -v 'http://httpbin.org/get?course=networking&assignment=1' -o output.txt
         '''
         # if not cmd: self.do_help('get')
         
@@ -111,12 +112,23 @@ class Httpc(cmd.Cmd):
         parser_get.add_argument('-h','--header',help='Associates headers to HTTP request with the format \'key:value\' ', nargs='+' )
 
         # add positional argument URL, fix bug : the no expect argument : URL 
-        parser_get.add_argument('url',help='a valid http url',default=cmd.split()[-1],nargs='?' )
+        parser_get.add_argument('url',help='a valid http url',default=cmd.split()[-1] ,nargs='?' )
         # print(cmd.split()[-1])
         # print(cmd.split()[:-1])
-        # print("[Debug] cmd.split() is : " + str(cmd.split()) )
+        print("[Debug] cmd.split() is : " + str(cmd.split()) )
 
-        args = parser_get.parse_args(cmd.split()[:-1])
+        # add optional argument -o filename
+        parser_get.add_argument('-o','--output',help='write the body of the response to the specific file')
+
+        # assign the valid arguments
+        # :test: get -v 'http://httpbin.org/get?course=networking&assignment=1' -o output.txt
+        if self._is_valid_url(cmd.split()[-1]):
+            args = parser_get.parse_args(cmd.split()[:-1])
+        else:
+            args = parser_get.parse_args(cmd.split()[:-3] + cmd.split()[-2:] )
+            print('[Debug] split args are : ' + str(cmd.split()[:-3]) + str(cmd.split()[-2:]))
+            args.url = cmd.split()[-3]
+        
         # print parser help
         # parser_get.print_help()
         print("[Debug] args are : " + str(args) )
@@ -147,9 +159,11 @@ class Httpc(cmd.Cmd):
                 request = self._get_request(url_parsed,args,'GET')
                 # use socket to connect server, get response
                 response_content = self._client_socket_connect_server(url_parsed,request)
-                # Output depends on diffenrent requirements (-v)
+                # print Output in the console depends on diffenrent requirements (-v)
                 self._print_details_by_verbose(args.verbose,response_content)
-
+            # if -o, write to output.txt
+            if args.output:
+                self._output_file(args, response_content)
 
     
     # some private methods
@@ -159,6 +173,11 @@ class Httpc(cmd.Cmd):
         :param: url
         :return: boolean
         '''
+        # if no quote starts with url, then add it. 
+        if url.startswith('\''):
+            pass
+        else:
+            url = '\'' + url + '\''
         # use eval() to omit the ' ' 
         if re.match(r'^https?:/{2}\w.+$',eval(url)):
             print('[Debug] valid url : ' + url)
@@ -291,6 +310,16 @@ class Httpc(cmd.Cmd):
             # only print the content.body
             print(response_content.body)
 
+    def _output_file(self, args, response_content):
+        '''
+        The method is to write the body of the response to the specified file.
+        :param: args
+        :param: response
+        '''
+        with open(args.output, 'w') as f:
+            f.write(response_content.body)
+        print(f'[Output] write the body of the response to the {args.output}')
+
     def do_post(self,cmd):
         '''
         The method is to executes a HTTP POST request for a given URL with inline data or from file.
@@ -300,6 +329,8 @@ class Httpc(cmd.Cmd):
         :test: httpc post -v -h Content-Type:application/json -d '{"Assignment": 1}' http://httpbin.org/post
         :test: httpc post -v -h Content-Type:application/json -f test-file.txt http://httpbin.org/post
         :test: httpc post -v -h Content-Type:application/json -d '{"Test": "Conflict"}' -f test-file.txt http://httpbin.org/post
+        :test -o filename: post -v -h Content-Type:application/json http://httpbin.org/post -o output.txt
+        :test -o filename: post -v -h Content-Type:application/json -d '{"Assignment": 1}' http://httpbin.org/post -o output.txt
         '''
         # parse the command from console
         parser_post = argparse.ArgumentParser(description='Post executes a HTTP POST request for a given URL with inline data or from file.'
@@ -317,8 +348,20 @@ class Httpc(cmd.Cmd):
         # add position argument URL, default is to make sure the last argument is URL, add \' for eval() function
         parser_post.add_argument('url',help='a valid http url',default= "'" + shlex.split(cmd)[-1] + "'" ,nargs='?' )
         
-        print('[Debug] args is : ' + str(shlex.split(cmd) ))
-        args = parser_post.parse_args(shlex.split(cmd)[:-1])
+        # add optional argument -o filename
+        parser_post.add_argument('-o','--output',help='write the body of the response to the specific file')
+
+        # assign the valid arguments
+        # :test: post -v -h Content-Type:application/json http://httpbin.org/post -o output.txt
+        if self._is_valid_url(shlex.split(cmd)[-1]):
+            # shlex is to ignore the space in quotes " x x"
+            args = parser_post.parse_args(shlex.split(cmd)[:-1])
+        else:
+            args = parser_post.parse_args(shlex.split(cmd)[:-3] + shlex.split(cmd)[-2:] )
+            # print('[Debug] split args are : ' + str(shlex.split(cmd)[:-3]) + str(shlex.split(cmd)[-2:]))
+            args.url = "'" + shlex.split(cmd)[-3] + "'"
+
+        # print('[Debug] args is : ' + str(shlex.split(cmd) ))
 
         print("[Debug] args are : " + str(args) )
         # test
@@ -334,9 +377,28 @@ class Httpc(cmd.Cmd):
             request = self._get_request(url_parsed,args,'POST')
             # use socket to connect server, get response
             response_content = self._client_socket_connect_server(url_parsed,request)
-
-            # Output depends on diffenrent requirements (-v)
+            
+            # print Output depends on diffenrent requirements (-v)
             self._print_details_by_verbose(args.verbose,response_content)
+
+            # check whether code is 3xx or not
+            code_redirect = ['301','302']
+            if response_content.code in code_redirect :
+                # change path
+                url_parsed.path = response_content.location
+                print('[Rediection] \'POST\' new location is : ' + url_parsed.path )
+                url_parsed.query = ''
+                # get request  
+                request = self._get_request(url_parsed,args,'POST')
+                # use socket to connect server, get response
+                response_content = self._client_socket_connect_server(url_parsed,request)
+                # print Output in the console depends on diffenrent requirements (-v)
+                self._print_details_by_verbose(args.verbose,response_content)
+
+            if args.output:
+                # if -o filename, write to the specified file
+                self._output_file(args, response_content)
+                
         
 
 class URL_PARSE:
