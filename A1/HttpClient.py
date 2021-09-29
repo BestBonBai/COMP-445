@@ -87,10 +87,19 @@ class HttpResponse:
         content = self.content.split('\r\n\r\n')
         self.header = content[0]
         self.body = content[1]
-        # get code: 200
+        # get status code: 200 or 3xx, etc
         self.header_lines = self.header.split('\r\n')
         self.header_info = self.header_lines[0].split(' ')
         self.code = self.header_info[1]
+
+        # rediection code (numbers starts with 3xx) 
+        # includes 300 Multiple Choices, 301 Moved Permanently, 302 Moved Temporarily, 304 Not Modified
+        rediect_code = ['301','302']
+        if self.code in rediect_code:
+            # get new location path
+            self.location = self.header_lines[5].split(' ')[1]
+            print('[Debug] Rediection Location is : ' + self.location)
+
 
         # print(f'[Debug] --- Code --- \n {self.code} \
         #     \n --- header --- \n {self.header} \

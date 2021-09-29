@@ -30,7 +30,7 @@ class Httpc(cmd.Cmd):
     /**     /**    /**        /**    /**      //**    **
     /**     /**    /**        /**    /**       //****** 
     //      //     //         //     //         ////// 
-     
+
     Welcome to httpc, Type help or ? to list commands.
     Press 'Ctrl+C' or Type 'quit' to terminate.
 
@@ -97,6 +97,7 @@ class Httpc(cmd.Cmd):
         :test: get -v 'http://httpbin.org/get?course=networking&assignment=1'
         :test: get -h key:value 'http://httpbin.org/get?course=networking&assignment=1'
         :test: get -h key1:value1 key2:value2 'http://httpbin.org/get?course=networking&assignment=1'
+        :test Redirection: get -v 'http://httpbin.org/status/301'
         '''
         # if not cmd: self.do_help('get')
         
@@ -134,6 +135,21 @@ class Httpc(cmd.Cmd):
 
             # Output depends on diffenrent requirements (-v)
             self._print_details_by_verbose(args.verbose,response_content)
+
+            # check whether code is 3xx or not
+            code_redirect = ['301','302']
+            if response_content.code in code_redirect :
+                # change path
+                url_parsed.path = response_content.location
+                print('[Rediection] \'GET\' new location is : ' + url_parsed.path )
+                url_parsed.query = ''
+                # get request  
+                request = self._get_request(url_parsed,args,'GET')
+                # use socket to connect server, get response
+                response_content = self._client_socket_connect_server(url_parsed,request)
+                # Output depends on diffenrent requirements (-v)
+                self._print_details_by_verbose(args.verbose,response_content)
+
 
     
     # some private methods
@@ -343,8 +359,8 @@ class URL_PARSE:
         self.hostname = self.url.hostname
         self.path = self.url.path
         self.query = self.url.query
-        # websocket has 2 types : ws and wss, the port is 80 and 443 respectively.
-        self.port = self.url.port or (443 if self.scheme == 'wss' else 80)
+        # the standard HTTP TCP port is 80
+        self.port = 80
         self.ip_address = socket.gethostbyname(self.hostname)
         self.resource = self.path
         if self.url.query:
