@@ -15,3 +15,35 @@ $ conda deactivate
 
 ### lists of libaries
 - socket
+- argparse
+- cmd
+- sys
+- re
+- urllib.parse
+- shlex
+- json
+
+### Usage of Assignment 1
+1. `cd` into the folder `A1`
+2. run `python httpc.py`
+3. follow the prompt (`httpc`), input one of the following test codes
+    + GET
+        - get 'http://httpbin.org/status/418'
+        - get 'http://httpbin.org/get?course=networking&assignment=1'
+        - get -v 'http://httpbin.org/get?course=networking&assignment=1'
+        - get -h key:value 'http://httpbin.org/get?course=networking&assignment=1'
+        - get -h key1:value1 key2:value2 'http://httpbin.org/get?course=networking&assignment=1'
+        - get -v 'http://httpbin.org/status/301'
+        - get -v 'http://httpbin.org/get?course=networking&assignment=1' -o output.txt
+    + POST
+        - post -h Content-Type:application/json -d '{"Assignment": 1}' http://httpbin.org/post
+        - post -v -h Content-Type:application/json http://httpbin.org/post
+        - post -v -h Content-Type:application/json -d '{"Assignment": 1}' http://httpbin.org/post
+        - post -v -h Content-Type:application/json -f test-file.txt http://httpbin.org/post
+        - post -v -h Content-Type:application/json -d '{"Test": "Conflict"}' -f test-file.txt http://httpbin.org/post
+        - post -v -h Content-Type:application/json http://httpbin.org/post -o output.txt
+        - post -v 'http://httpbin.org/status/301'
+        - post -v http://httpbin.org/status/302
+        - post -v -h Content-Type:application/json -d '{"Assignment": 1}' http://httpbin.org/post -o output.txt
+        
+        
