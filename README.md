@@ -34,6 +34,8 @@ $ conda deactivate
         - get -h key:value 'http://httpbin.org/get?course=networking&assignment=1'
         - get -h key1:value1 key2:value2 'http://httpbin.org/get?course=networking&assignment=1'
         - get -v 'http://httpbin.org/status/301'
+        - (Test redirection : google.com) get -v 'https://bit.ly/3ovMo2i'
+        - get -v 'https://bit.ly/3ovMo2i' -o output-google.txt
         - get -v 'http://httpbin.org/get?course=networking&assignment=1' -o output.txt
     + POST
         - post -h Content-Type:application/json -d '{"Assignment": 1}' http://httpbin.org/post
@@ -41,9 +43,10 @@ $ conda deactivate
         - post -v -h Content-Type:application/json -d '{"Assignment": 1}' http://httpbin.org/post
         - post -v -h Content-Type:application/json -f test-file.txt http://httpbin.org/post
         - post -v -h Content-Type:application/json -d '{"Test": "Conflict"}' -f test-file.txt http://httpbin.org/post
-        - post -v -h Content-Type:application/json http://httpbin.org/post -o output.txt
+        - post -v -h Content-Type:application/json http://httpbin.org/post -o output-post.txt
         - post -v 'http://httpbin.org/status/301'
         - post -v http://httpbin.org/status/302
-        - post -v -h Content-Type:application/json -d '{"Assignment": 1}' http://httpbin.org/post -o output.txt
+        - (Test rediection 405 Method Not Allowed) post -v 'https://bit.ly/3ovMo2i'
+        - post -v -h Content-Type:application/json -d '{"Assignment": 1}' http://httpbin.org/post -o output-post.txt
         
         
