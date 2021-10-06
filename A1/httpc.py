@@ -150,6 +150,7 @@ class Httpc(cmd.Cmd):
                 response_content = self._client_socket_connect_server(url_parsed,request)
                 # print Output in the console depends on diffenrent requirements (-v)
                 self._print_details_by_verbose(args.verbose,response_content)
+                # check whether code is 3xx or not
                 if response_content.code in code_redirect :
                     # change path and re-parse url
                     if self._is_valid_url(response_content.location):
@@ -385,6 +386,7 @@ class Httpc(cmd.Cmd):
                 response_content = self._client_socket_connect_server(url_parsed,request)
                 # print Output in the console depends on diffenrent requirements (-v)
                 self._print_details_by_verbose(args.verbose,response_content)
+                # check whether code is 3xx or not
                 if response_content.code in code_redirect :
                     # change path
                     # change path and re-parse url
@@ -398,9 +400,7 @@ class Httpc(cmd.Cmd):
                 else:
                     # other code cases
                     print('\n[Debug] --- End ---\n')
-                    break
-                    
-                    
+                    break                 
 
             if args.output:
                 # if -o filename, write to the specified file
