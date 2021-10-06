@@ -5,7 +5,7 @@ COMP 445 lab assignment 1
 @ date: 2021-09-20
 @ version: 1.0.0
 '''
-import json
+import re
 class HttpRequest:
     '''
     The class is to deal with the request of Get and Post.
@@ -56,14 +56,15 @@ class HttpRequest:
                     ) 
             # add Body Http Post request, use query directly instead of json methods
             request += self.query
-            # data_dict = json.loads(self.query)
-            # request += json.dumps(data_dict)
 
-            print(f'[Debug] request is : \n {request}')
+            # print(f'[Debug] request is : \n {request}')
             # print('[Debug] Post query is : ' + self.query + '\n[Debug] Length is : ' + str(len(self.query)))
         else:
             print(f'[Debug] Invalid request method : {request_method}')
             return None
+
+        print(f'[Debug] request is : \n {request}')
+
         return request
 
 
@@ -77,7 +78,8 @@ class HttpResponse:
         The method is to initial the response.
         :param: response
         '''
-        self.content = response.decode('utf-8')
+        # use errors = "ignore" to solve the UnicodeError that cannot decode 'utf-8'
+        self.content = response.decode('utf-8', errors="ignore" )
         self.parseContent()
 
     def parseContent(self):
@@ -95,9 +97,15 @@ class HttpResponse:
         # rediection code (numbers starts with 3xx) 
         # includes 300 Multiple Choices, 301 Moved Permanently, 302 Moved Temporarily, 304 Not Modified
         rediect_code = ['301','302']
+        self.location = ''
         if self.code in rediect_code:
             # get new location path
-            self.location = self.header_lines[5].split(' ')[1]
+            for index in range(len(self.header_lines)):
+                line_location = re.match(r'Location',self.header_lines[index],re.M|re.I)
+                if line_location is not None: 
+                    self.location = self.header_lines[index].split(' ')[1]
+                    break
+            # self.location = self.header_lines[5].split(' ')[1]
             print('[Debug] Rediection Location is : ' + self.location)
 
 

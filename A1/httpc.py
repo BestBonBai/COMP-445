@@ -126,7 +126,7 @@ class Httpc(cmd.Cmd):
             args = parser_get.parse_args(cmd.split()[:-1])
         else:
             args = parser_get.parse_args(cmd.split()[:-3] + cmd.split()[-2:] )
-            print('[Debug] split args are : ' + str(cmd.split()[:-3]) + str(cmd.split()[-2:]))
+            # print('[Debug] split args are : ' + str(cmd.split()[:-3]) + str(cmd.split()[-2:]))
             args.url = cmd.split()[-3]
         
         # print parser help
@@ -140,27 +140,29 @@ class Httpc(cmd.Cmd):
         
             # urlparse 
             url_parsed = URL_PARSE(args.url)
-            # get request  
-            request = self._get_request(url_parsed,args,'GET')
-            # use socket to connect server, get response
-            response_content = self._client_socket_connect_server(url_parsed,request)
-
-            # Output depends on diffenrent requirements (-v)
-            self._print_details_by_verbose(args.verbose,response_content)
-
+            
             # check whether code is 3xx or not
             code_redirect = ['301','302']
-            if response_content.code in code_redirect :
-                # change path
-                url_parsed.path = response_content.location
-                print('[Rediection] \'GET\' new location is : ' + url_parsed.path )
-                url_parsed.query = ''
+            while True:    
                 # get request  
                 request = self._get_request(url_parsed,args,'GET')
                 # use socket to connect server, get response
                 response_content = self._client_socket_connect_server(url_parsed,request)
                 # print Output in the console depends on diffenrent requirements (-v)
                 self._print_details_by_verbose(args.verbose,response_content)
+                if response_content.code in code_redirect :
+                    # change path and re-parse url
+                    if self._is_valid_url(response_content.location):
+                        args.url = "'" + response_content.location + "'"
+                        url_parsed = URL_PARSE(args.url)
+                    else:
+                        url_parsed.path = response_content.location
+                    print('[Rediection] \'GET\' new location is : ' + response_content.location )        
+                else:
+                    print('\n[Debug] --- End ---\n')
+                    break
+            
+
             # if -o, write to output.txt
             if args.output:
                 self._output_file(args, response_content)
@@ -373,27 +375,32 @@ class Httpc(cmd.Cmd):
         
             # urlparse 
             url_parsed = URL_PARSE(args.url)
-            # get request  
-            request = self._get_request(url_parsed,args,'POST')
-            # use socket to connect server, get response
-            response_content = self._client_socket_connect_server(url_parsed,request)
-            
-            # print Output depends on diffenrent requirements (-v)
-            self._print_details_by_verbose(args.verbose,response_content)
 
             # check whether code is 3xx or not
             code_redirect = ['301','302']
-            if response_content.code in code_redirect :
-                # change path
-                url_parsed.path = response_content.location
-                print('[Rediection] \'POST\' new location is : ' + url_parsed.path )
-                url_parsed.query = ''
+            while True:
                 # get request  
                 request = self._get_request(url_parsed,args,'POST')
                 # use socket to connect server, get response
                 response_content = self._client_socket_connect_server(url_parsed,request)
                 # print Output in the console depends on diffenrent requirements (-v)
                 self._print_details_by_verbose(args.verbose,response_content)
+                if response_content.code in code_redirect :
+                    # change path
+                    # change path and re-parse url
+                    if self._is_valid_url(response_content.location):
+                        args.url = "'" + response_content.location + "'"
+                        url_parsed = URL_PARSE(args.url)
+                    else:
+                        url_parsed.path = response_content.location
+                    
+                    print('[Rediection] \'POST\' new location is : ' + response_content.location )
+                else:
+                    # other code cases
+                    print('\n[Debug] --- End ---\n')
+                    break
+                    
+                    
 
             if args.output:
                 # if -o filename, write to the specified file
