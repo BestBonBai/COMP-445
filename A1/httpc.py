@@ -428,8 +428,9 @@ class URL_PARSE:
         self.hostname = self.url.hostname
         self.path = self.url.path
         self.query = self.url.query
-        # the standard HTTP TCP port is 80
-        self.port = 80
+        # the standard HTTP TCP port is 80, A2 uses 8080 default
+        self.port = 80 if not self.url.port else self.url.port
+        print(f'[Debug] Port is : {self.port}')
         self.ip_address = socket.gethostbyname(self.hostname)
         self.resource = self.path
         if self.url.query:
