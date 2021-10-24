@@ -10,8 +10,11 @@ import sys
 import cmd
 import argparse
 import re
+import json
 import socket
 import threading
+from HttpServer import HttpMethod, HttpRequestParser
+from FileManager import FileOperation, FileManager
 
 class Httpfs(cmd.Cmd):
     """ 
@@ -164,16 +167,40 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
                 data += part_data
                 if len(part_data) < BUFFER_SIZE:
                     break
-            result = data.decode("utf-8")
-            print(f'[Debug] Received Request of Client is : \n {result} ')
+            client_request = data.decode("utf-8")
+            print(f'[Debug] Received Request of Client is : \n {client_request} ')
             # test response
             response = "HTTP1.0/ 200 OK\r\nContext-Type : txt\r\n\r\nServer send response to Client!!!".encode("utf-8")
             print(f'[Debug] Send Response to Client : \n {response}')
+
+            # Parse Request
+            request_parser = HttpRequestParser(client_request)
+
+            self._get_response(request_parser, '.')
+
             conn.sendall(response)
         finally:
             conn.close()
             print(f'[Debug] Client: {addr} is disconnected from Server.')
                         
+    def _get_response(self, request_parser, dir_path):
+        '''
+        The method is to get response by request_parser and dir_path.
+        :param: request_parser : HttpRequestParser Obj
+        :param: dir_path
+        :return: response
+        '''
+
+        # GET request
+        if request_parser.operation == FileOperation.GetFileList:
+            # return a list of current files in the data directory
+            file_manager = FileManager()
+            files_list = file_manager.get_files_list_in_dir(dir_path)
+            print(f'files list is : {files_list}')
+            # json_file = json.dumps(files_list, ensure_ascii=False)
+            # print(f'JSON files is : \n{json_file}')
+
+
 
 
 # main
