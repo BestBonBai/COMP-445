@@ -25,14 +25,33 @@
     - `httpfs -v -p 8080`
     - `httpfs -v -p 8080 -d data`
 3. add new terminal, `cd` into the folder `A1`, run `python httpc.py`, follow the prompt (`httpc`), input one of the following test codes:
+    ### Basic Get
+    - get -v 'http://localhost:8080/get?course=networking&assignment=1'
+    - get -v -h key1:value1 'http://localhost:8080/get?course=networking&assignment=1'
+
+    ### Get File Manager
     - get 'http://localhost:8080/'
     - get -v 'http://localhost:8080/'
+    - get -v 'http://localhost:8080/foo' (Server uses default dir `data`)
+    - get -v 'http://localhost:8080/data2/foo2' (Server uses default dir `data`)
+    - get -v 'http://localhost:8080/README.md' (Test Secure Access: Server uses `.` as dir_path)
+    - get -v 'http://localhost:8080/../README.md' (Test Secure Access: Server uses default dir `data`)
+
+    ### Basic Post
+    - post -v -h Content-Type:application/json -d '{"Assignment": 1}' http://localhost:8080/post
+    - post -v -h Content-Type:application/json -f test-file.txt http://localhost:8080/post
+
+    ### Post File Manager
+    - post -h Content-Type:application/json -d '{"Assignment": 2}' http://localhost:8080/bar
+    - post -h Content-Type:application/json -f test-file.txt http://localhost:8080/data2/bar2
+    #### Test: Invalid woring directory
+    - post -h Content-Type:application/json -d '{"Assignment": 2}' http://localhost:8080/../bbb
+    #### Test: File Not Found Error, even through in valid working directory.
+    - post -h Content-Type:application/json -d '{"Assignment": 2}' http://localhost:8080/data3/bbb
+    ### Get different Content Type
     - get -h Content-Type:application/json 'http://localhost:8080/'
     - get -h Content-Type:text/xml 'http://localhost:8080/'
-
-    - get -v 'http://localhost:8080/foo'
+    ### Content-Disposition
     - get -h Content-Disposition:inline 'http://localhost:8080/filename'
-    - get -v -h 'http://localhost:8080/../foo'
-    - get -h Content-Disposition:inline 'http://localhost:8080/filename'
-
+    
     - post -h Content-Type:application/json -d '{"": "somethingelse"}' http://localhost:8080/bar
