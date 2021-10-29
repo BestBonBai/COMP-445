@@ -115,7 +115,7 @@ class Httpc(cmd.Cmd):
         parser_get.add_argument('url',help='a valid http url',default=cmd.split()[-1] ,nargs='?' )
         # print(cmd.split()[-1])
         # print(cmd.split()[:-1])
-        print("[Debug] cmd.split() is : " + str(cmd.split()) )
+        # print("[Debug] cmd.split() is : " + str(cmd.split()) )
 
         # add optional argument -o filename
         parser_get.add_argument('-o','--output',help='write the body of the response to the specific file')
@@ -183,7 +183,7 @@ class Httpc(cmd.Cmd):
             url = '\'' + url + '\''
         # use eval() to omit the ' ' 
         if re.match(r'^https?:/{2}\w.+$',eval(url)):
-            print('[Debug] valid url : ' + url)
+            # print('[Debug] valid url : ' + url)
             return True
         else: 
             print('[Debug] invalid url')
@@ -277,23 +277,31 @@ class Httpc(cmd.Cmd):
         try:
             client_socket.connect(url_parsed.address)
             print('--- Connect success ---')
-            
             # get response : data (Type: bytes) that need to be decoded by UTF-8 
             data = b''
+            BUFF_SIZE = 1024
             while True:
                 # send data
                 client_socket.sendall(request.encode("utf-8"))
                 # receive data
                 # MSG_WAITALL waits for full request or error
-                response = client_socket.recv(len(request), socket.MSG_WAITALL)
-                if response:
-                    data += response
-                else: break
-                # if len(response) < 1 : break
+
+                # response = client_socket.recv(len(request), socket.MSG_WAITALL)
+                # if response:
+                #     data += response
+                # else: break
+
+                # instead of above method to FIX BrokenPipe [Error 32], since client closed before recv all response.
+                response = client_socket.recv(BUFF_SIZE)
+                data += response
+                if len(response) < BUFF_SIZE:
+                    break
+                
             # decode data, and then parse content
             response_content = HttpResponse(data)
 
-        finally:      
+        finally:  
+            # test Broken Pipe Error 32    
             client_socket.close()
             return response_content
         
