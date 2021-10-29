@@ -33,13 +33,19 @@ class HttpRequestParser:
         # get method, resource, version 
         header_lines = self.http_header.split('\r\n')
         self.method, self.resource, self.version = header_lines[0].split(' ')
-        # get contentType
-        for index, line in enumerate(header_lines):
+        # get header info and set Content-Type
+        self.dict_header_info = {}
+        for line in header_lines[1:]:
             if re.match(r'Content-Type', line):
-                self.contentType = line.split(' ')[1]
-                break
+                self.contentType = line.split(':')[1]
+            else:
+                key, value = line.split(':')
+                self.dict_header_info[key] = value
+            
+
         # set operation
         self._set_operation()
+
 
     def _set_operation(self):
         '''
@@ -47,10 +53,51 @@ class HttpRequestParser:
         '''
         # GET method
         if self.method == HttpMethod.Get:
-            if self.resource == '/':
+            # basic GET request
+            if re.match(r'/get',self.resource):
+                if self.resource in ['/get','/get?']:
+                    self.param = ''
+                else:
+                    # split /get?course=networking&assignment=1
+                    temp = self.resource.split('?')[-1]
+                    result = {}
+                    for item in temp.split('&'):
+                        key, value = item.split('=')
+                        result[key] = value
+                    self.param = result   
+                    print(f'[Debug] Params : \n {result}')
+                self.operation = FileOperation.GetResource
+
+            elif self.resource == '/':
                 self.operation = FileOperation.GetFileList
+            else:
+                if re.match(r'/(.+)', self.resource):
+                    self.operation = FileOperation.GetFileContent
+                    # ignore the first '/'
+                    self.fileName = self.resource[1:]
+                    print(f'[Debug] FileName is : {self.fileName}')
+                else:
+                    self.operation = FileOperation.Invalid
 
         # POST method
+        elif self.method == HttpMethod.Post:
+            if self.resource == '/post':
+                # set self data of body
+                self.data = self.http_body
+                self.operation = FileOperation.PostResource
+
+            else:
+                if re.match(r'/(.+)',self.resource):
+                    # post file
+                    self.fileName = self.resource[1:]
+                    self.operation = FileOperation.PostFileContent
+                    self.data = self.http_body
+                else:
+                    self.operation = FileOperation.Invalid
+
+        # Invalid method
+        else: 
+            self.operation = FileOperation.Invalid
 
         
 
