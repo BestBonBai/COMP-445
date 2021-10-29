@@ -5,6 +5,7 @@ COMP 445 lab assignment 2
 @ date: 2021-10-23
 @ version: 1.0.0
 '''
+import logging
 import os
 import re
 class FileOperation:
@@ -97,6 +98,7 @@ class FileManager:
         if re.match(r'\.\.\/', file_name):
             self.status = '400'
             self.content = 'Client Cannot Access to read/write any file outside the file server working directory!!!'
+            logging.warning(f'Client Cannot Access : {dir_path}')
         elif dir_path != 'data':  
             self.status = '400'
             self.content = 'Not Access - Contact Server Admin to set correct work directory!'

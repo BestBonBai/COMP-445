@@ -13,6 +13,7 @@ import re
 import json
 import socket
 import threading
+import logging
 from HttpServer import HttpMethod, HttpRequestParser
 from FileManager import FileOperation, FileManager
 
@@ -81,6 +82,19 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
         print('Thanks for using! Bye!')
         sys.exit(0)
 
+    def _config_logging(self, verbose):
+        '''
+        The method is to config logging.
+        :param: verbose
+        :return: logger
+        '''
+        FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
+        if verbose:
+            logging.basicConfig(format=FORMAT, datefmt='%Y/%m/%d %H:%M:%S', stream=sys.stdout, level=logging.DEBUG)
+        else:
+            logging.basicConfig(format=FORMAT, datefmt='%Y/%m/%d %H:%M:%S', stream=sys.stdout, level=logging.INFO)
+        
+
     def emptyline(self):
         '''
         The override method is to use default arguments that -v: False, -p PORT: 8080 and -d PATH-TO-DIR: current dir,
@@ -96,18 +110,23 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
         parser_server.add_argument('-p','--port',help='Specifies the port number that the server will listen and serve at.\n \
                                     Default is 8080.', type=int, default=8080 )
         parser_server.add_argument('-d','--dir',help='Specifies the directory that the server will use to read/write \
-                                    requested files.', default='/' )
+                                    requested files.', default='data' )
         # check if the format of Https is correct
         try:
             # assign args
             args = parser_server.parse_args()
-            print(f'[Debug] verbose is : {args.verbose}, port is : {args.port}, path-to-dir is : {args.dir}')
+            # print(f'[Debug] verbose is : {args.verbose}, port is : {args.port}, path-to-dir is : {args.dir}')
+            
+            # set logging config
+            self._config_logging(args.verbose)
+            logging.debug(f'verbose is : {args.verbose}, port is : {args.port}, path-to-dir is : {args.dir}')
+            
             # run http file server
-            # self._run_server('localhost',args.port, args.dir)
+            self._run_server('localhost',args.port, args.dir)
         except:
             print('[HELP] Please Enter help to check correct usgae!')  
             return
-        
+    
 
     def default(self, cmd):
         '''
@@ -125,14 +144,19 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
                                     Default is 8080.', type=int, default=8080 )
         parser_server.add_argument('-d','--dir',help='Specifies the directory that the server will use to read/write \
                                     requested files.', default='data' )
-        print("[Debug] cmd.split() is : " + str(cmd.split()) )
+        # print("[Debug] cmd.split() is : " + str(cmd.split()) )
         
         # check if the format of Https is correct
         try:
             # assign args
             args = parser_server.parse_args(cmd.split())
-            print(f'[Debug] verbose is : {args.verbose}, port is : {args.port}, path-to-dir is : {args.dir}')
-            print('\n[News] Running the Http file server ...\n')
+            # print(f'[Debug] verbose is : {args.verbose}, port is : {args.port}, path-to-dir is : {args.dir}')
+            # print('\n[News] Running the Http file server ...\n')
+
+            # set logging config
+            self._config_logging(args.verbose)
+            logging.debug(f'verbose is : {args.verbose}, port is : {args.port}, path-to-dir is : {args.dir}')
+            logging.info(f'[News] Running the Http file server ...')
             # run http file server
             self._run_server('localhost',args.port, args.dir)
         except:
@@ -148,10 +172,12 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
         
         try:
             ip_addr = socket.gethostbyname(host)
-            print(f'[Debug] hostname is : {ip_addr}')
+            # print(f'[Debug] hostname is : {ip_addr}')
+            logging.debug(f'hostname is : {ip_addr}')
             listener.bind((host, port))
             listener.listen(5)
-            print('Echo server is listening at', port)
+            # print('Echo server is listening at', port)
+            logging.info(f'Echo server is listening at {port} ')
             while True:
                 conn, addr = listener.accept()
                 threading.Thread(target=self._handle_client, args=(conn, addr, dir_path)).start()
@@ -159,7 +185,8 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
             listener.close()
 
     def _handle_client(self, conn, addr, dir_path):
-        print(f'\n[Debug] New client from {addr}')
+        # print(f'\n[Debug] New client from {addr}')
+        logging.debug(f'New client from {addr}')
         BUFFER_SIZE = 1024
         try:
             data = b''
@@ -169,7 +196,8 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
                 if len(part_data) < BUFFER_SIZE:
                     break
             client_request = data.decode("utf-8")
-            print(f'\n[Debug] --- Receiving Request of Client --- \n\n {client_request} \n\n [Debug] --- End --- \n ')
+            # print(f'\n[Debug] --- Receiving Request of Client --- \n\n {client_request} \n\n [Debug] --- End --- \n ')
+            logging.debug(f'Client request is :\n{client_request}')
             # test response
             # response = "HTTP1.0/ 200 OK\r\nContext-Type : txt\r\n\r\nServer send response to Client!!!".encode("utf-8")
             # print(f'[Debug] Send Response to Client : \n {response}')
@@ -182,8 +210,9 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
             conn.sendall(server_response.encode("utf-8"))
         finally:
             conn.close()
-            print(f'[Debug] Client: {addr} is disconnected from Server.')
-                        
+            # print(f'[Debug] Client: {addr} is disconnected from Server.')
+            logging.debug(f'Client: {addr} is disconnected from Server.')  
+
     def _get_response(self, request_parser, dir_path):
         '''
         The method is to get response by request_parser and dir_path.
@@ -204,7 +233,8 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
         elif request_parser.operation == FileOperation.GetFileList:    
             # return a list of current files in the data directory
             files_list = file_manager.get_files_list_in_dir(dir_path)
-            print(f'[Debug] files list is : {files_list}')
+            # print(f'[Debug] files list is : {files_list}')
+            logging.debug(f'files list is : {files_list}')
             # json_file = json.dumps(files_list, ensure_ascii=False)
             # print(f'JSON files is : \n{json_file}')
             response = self._generate_full_response_by_type(request_parser,files_list,file_manager)
@@ -276,6 +306,8 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
             'Content-Type: ' + request_parser.contentType + '\r\n' + \
             'Connection: close' + '\r\n\r\n'
         full_response = response_header + content
+
+        logging.debug(f'Server send Response to client:\n{full_response}')
 
         return full_response
 

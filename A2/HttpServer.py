@@ -5,6 +5,7 @@ COMP 445 lab assignment 2
 @ date: 2021-10-23
 @ version: 1.0.0
 '''
+import logging
 import re
 from FileManager import FileOperation
 
@@ -65,7 +66,8 @@ class HttpRequestParser:
                         key, value = item.split('=')
                         result[key] = value
                     self.param = result   
-                    print(f'[Debug] Params : \n {result}')
+                    # print(f'[Debug] Params : \n {result}')
+                    logging.debug(f'Params : {result}')
                 self.operation = FileOperation.GetResource
 
             elif self.resource == '/':
@@ -75,7 +77,8 @@ class HttpRequestParser:
                     self.operation = FileOperation.GetFileContent
                     # ignore the first '/'
                     self.fileName = self.resource[1:]
-                    print(f'[Debug] FileName is : {self.fileName}')
+                    # print(f'[Debug] FileName is : {self.fileName}')
+                    logging.debug(f'FileName is : {self.fileName}')
                 else:
                     self.operation = FileOperation.Invalid
 
