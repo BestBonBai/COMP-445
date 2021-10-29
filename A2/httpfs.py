@@ -103,7 +103,7 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
             args = parser_server.parse_args()
             print(f'[Debug] verbose is : {args.verbose}, port is : {args.port}, path-to-dir is : {args.dir}')
             # run http file server
-            self._run_server('localhost',args.port)
+            # self._run_server('localhost',args.port, args.dir)
         except:
             print('[HELP] Please Enter help to check correct usgae!')  
             return
@@ -124,9 +124,9 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
         parser_server.add_argument('-p','--port',help='Specifies the port number that the server will listen and serve at.\n \
                                     Default is 8080.', type=int, default=8080 )
         parser_server.add_argument('-d','--dir',help='Specifies the directory that the server will use to read/write \
-                                    requested files.', default='/' )
+                                    requested files.', default='data' )
         print("[Debug] cmd.split() is : " + str(cmd.split()) )
-
+        
         # check if the format of Https is correct
         try:
             # assign args
@@ -134,17 +134,18 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
             print(f'[Debug] verbose is : {args.verbose}, port is : {args.port}, path-to-dir is : {args.dir}')
             print('\n[News] Running the Http file server ...\n')
             # run http file server
-            self._run_server('localhost',args.port)
+            self._run_server('localhost',args.port, args.dir)
         except:
             print('[HELP] Please Enter help to get correct format!')  
             return
 
-    def _run_server(self, host, port):
+    def _run_server(self, host, port, dir_path):
         '''
         The method is to run a simple file server by socket.
         :param: args
         '''
         listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
         try:
             ip_addr = socket.gethostbyname(host)
             print(f'[Debug] hostname is : {ip_addr}')
@@ -153,11 +154,11 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
             print('Echo server is listening at', port)
             while True:
                 conn, addr = listener.accept()
-                threading.Thread(target=self._handle_client, args=(conn, addr)).start()
+                threading.Thread(target=self._handle_client, args=(conn, addr, dir_path)).start()
         finally:
             listener.close()
 
-    def _handle_client(self, conn, addr):
+    def _handle_client(self, conn, addr, dir_path):
         print(f'\n[Debug] New client from {addr}')
         BUFFER_SIZE = 1024
         try:
@@ -168,17 +169,17 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
                 if len(part_data) < BUFFER_SIZE:
                     break
             client_request = data.decode("utf-8")
-            print(f'[Debug] Received Request of Client is : \n {client_request} ')
+            print(f'\n[Debug] --- Receiving Request of Client --- \n\n {client_request} \n\n [Debug] --- End --- \n ')
             # test response
-            response = "HTTP1.0/ 200 OK\r\nContext-Type : txt\r\n\r\nServer send response to Client!!!".encode("utf-8")
-            print(f'[Debug] Send Response to Client : \n {response}')
+            # response = "HTTP1.0/ 200 OK\r\nContext-Type : txt\r\n\r\nServer send response to Client!!!".encode("utf-8")
+            # print(f'[Debug] Send Response to Client : \n {response}')
 
             # Parse Request
             request_parser = HttpRequestParser(client_request)
 
-            self._get_response(request_parser, '.')
+            server_response = self._get_response(request_parser, dir_path)
 
-            conn.sendall(response)
+            conn.sendall(server_response.encode("utf-8"))
         finally:
             conn.close()
             print(f'[Debug] Client: {addr} is disconnected from Server.')
@@ -191,14 +192,92 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
         :return: response
         '''
 
+        # A file manager
+        file_manager = FileManager()
+        response = "HTTP1.0/ 404 Not Found\r\nContext-Type: application/json\r\n\r\nNo Response"
         # GET request
-        if request_parser.operation == FileOperation.GetFileList:
+
+        # Basic GET
+        if request_parser.operation == FileOperation.GetResource:
+            response = self._generate_full_response_by_type(request_parser, request_parser.param, file_manager)
+        # GET file list
+        elif request_parser.operation == FileOperation.GetFileList:    
             # return a list of current files in the data directory
-            file_manager = FileManager()
             files_list = file_manager.get_files_list_in_dir(dir_path)
-            print(f'files list is : {files_list}')
+            print(f'[Debug] files list is : {files_list}')
             # json_file = json.dumps(files_list, ensure_ascii=False)
             # print(f'JSON files is : \n{json_file}')
+            response = self._generate_full_response_by_type(request_parser,files_list,file_manager)
+        # Get File Content
+        elif request_parser.operation == FileOperation.GetFileContent:
+            file_content = file_manager.get_file_content(request_parser.fileName, dir_path)
+            response = self._generate_full_response_by_type(request_parser, file_content, file_manager)
+        
+        # Post Resource
+        elif request_parser.operation == FileOperation.PostResource:
+            response = self._generate_full_response_by_type(request_parser, request_parser.data, file_manager)
+
+        # Post /bar
+        elif request_parser.operation == FileOperation.PostFileContent:
+            content_response = file_manager.post_file_content(request_parser.fileName, dir_path, request_parser.data)
+            response = self._generate_full_response_by_type(request_parser, content_response, file_manager)
+        # operation is invalid
+        else:
+            response = self._generate_full_response_by_type(request_parser, 'Invalid Request', file_manager)
+
+        return response
+    
+
+    def _generate_full_response_by_type(self, request_parser, response_body, file_manager):
+        '''
+        The method is to generate full response by different type formate,
+        according to the Content-Type of Header of the request.
+        :param: request_parser
+        :param: response_body
+        :param: file_manager
+        :return: response
+        '''
+        # default return JSON format of response body
+        body_output = {}
+        # GET Methods
+        if request_parser.operation == FileOperation.GetResource:
+            body_output['args'] = request_parser.param
+            file_manager.status = '200'
+        elif request_parser.operation == FileOperation.GetFileList:
+            body_output['files'] = response_body
+        elif request_parser.operation == FileOperation.GetFileContent:
+            if file_manager.status in ['400','404']:
+                body_output['Error'] = response_body
+            else:
+                body_output['content'] = response_body
+        # POST methods
+        elif request_parser.operation == FileOperation.PostResource:
+            body_output['data'] = response_body
+        elif request_parser.operation == FileOperation.PostFileContent:
+            if file_manager.status in ['400','404']:
+                body_output['Error'] = response_body
+            else:
+                body_output['Info'] = response_body
+        # Check Http Version
+        elif request_parser.version != 'HTTP/1.0':
+            # 505 : HTTP Version Not Support
+            file_manager.status == '505'
+        else:
+            body_output['Invalid'] = response_body
+            # file_manager.status = '400'
+        # set header info
+        body_output['headers'] = request_parser.dict_header_info
+        # set json format
+        content = json.dumps(body_output)
+
+        response_header = request_parser.version + ' ' + file_manager.status + ' ' + \
+            file_manager.dic_status[file_manager.status] + '\r\n' + \
+            'Content-Length: ' + str(len(content)) + '\r\n' + \
+            'Content-Type: ' + request_parser.contentType + '\r\n' + \
+            'Connection: close' + '\r\n\r\n'
+        full_response = response_header + content
+
+        return full_response
 
 
 
