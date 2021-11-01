@@ -37,10 +37,6 @@
     - get -v 'http://localhost:8080/README.md' (Test Secure Access: Server uses `.` as dir_path)
     - get -v 'http://localhost:8080/../README.md' (Test Secure Access: Server uses default dir `data`)
 
-    ### Basic Post
-    - post -v -h Content-Type:application/json -d '{"Assignment": 1}' http://localhost:8080/post
-    - post -v -h Content-Type:application/json -f test-file.txt http://localhost:8080/post
-
     ### Post File Manager
     - post -h Content-Type:application/json -d '{"Assignment": 2}' http://localhost:8080/bar
     - post -h Content-Type:application/json -f test-file.txt http://localhost:8080/data2/bar2
