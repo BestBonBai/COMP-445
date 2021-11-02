@@ -18,6 +18,7 @@ class FileOperation:
     GetResource = 3
     PostResource = 4
     PostFileContent = 5
+    Download = 6
 
 class FileManager:
     '''

@@ -48,6 +48,6 @@
     - get -h Content-Type:application/json 'http://localhost:8080/'
     - get -h Content-Type:text/xml 'http://localhost:8080/'
     ### Content-Disposition
-    - get -h Content-Disposition:inline 'http://localhost:8080/filename'
+    - get -v -h Content-Disposition:inline 'http://localhost:8080/download'
     
     - post -h Content-Type:application/json -d '{"": "somethingelse"}' http://localhost:8080/bar

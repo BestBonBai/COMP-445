@@ -28,7 +28,7 @@ class HttpRequestParser:
         '''
         # default values
         self.contentType = "application/json"
-
+        self.operation = ''
         # split header and body of request
         self.http_header, self.http_body = request.split('\r\n\r\n')
         # get method, resource, version 
@@ -39,6 +39,11 @@ class HttpRequestParser:
         for line in header_lines[1:]:
             if re.match(r'Content-Type', line):
                 self.contentType = line.split(':')[1]
+            elif re.match(r'Content-Disposition', line):
+                self.operation = FileOperation.Download
+                if re.match(r'/(.+)', self.resource):
+                    # ignore the first '/'
+                    self.fileName = self.resource[1:]
             else:
                 key, value = line.split(':')
                 self.dict_header_info[key] = value
@@ -53,7 +58,7 @@ class HttpRequestParser:
         The method is to set the file operation by different request.
         '''
         # GET method
-        if self.method == HttpMethod.Get:
+        if self.method == HttpMethod.Get and self.operation != FileOperation.Download:
             # basic GET request
             if re.match(r'/get',self.resource):
                 if self.resource in ['/get','/get?']:
@@ -97,7 +102,8 @@ class HttpRequestParser:
                     self.data = self.http_body
                 else:
                     self.operation = FileOperation.Invalid
-
+        elif self.operation == FileOperation.Download:
+            pass
         # Invalid method
         else: 
             self.operation = FileOperation.Invalid

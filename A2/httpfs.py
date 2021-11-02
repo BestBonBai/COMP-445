@@ -242,7 +242,10 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
         elif request_parser.operation == FileOperation.GetFileContent:
             file_content = file_manager.get_file_content(request_parser.fileName, dir_path)
             response = self._generate_full_response_by_type(request_parser, file_content, file_manager)
-        
+        # Get Download
+        elif request_parser.operation == FileOperation.Download:
+            file_content = "Save me!"
+            response = self._generate_full_response_by_type(request_parser, file_content, file_manager)
         # Post Resource
         elif request_parser.operation == FileOperation.PostResource:
             response = self._generate_full_response_by_type(request_parser, request_parser.data, file_manager)
@@ -280,6 +283,10 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
                 body_output['Error'] = response_body
             else:
                 body_output['content'] = response_body
+        # Download
+        elif request_parser.operation == FileOperation.Download:
+            file_manager.status = '200'
+            body_output['Download Info'] = response_body
         # POST methods
         elif request_parser.operation == FileOperation.PostResource:
             body_output['data'] = response_body
@@ -303,8 +310,11 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
         response_header = request_parser.version + ' ' + file_manager.status + ' ' + \
             file_manager.dic_status[file_manager.status] + '\r\n' + \
             'Content-Length: ' + str(len(content)) + '\r\n' + \
-            'Content-Type: ' + request_parser.contentType + '\r\n' + \
-            'Connection: close' + '\r\n\r\n'
+            'Content-Type: ' + request_parser.contentType + '\r\n'
+        # Content-Disposition
+        if request_parser.operation == FileOperation.Download:
+            response_header += f'Content-Disposition: attachment; filename={request_parser.fileName} \r\n'
+        response_header += 'Connection: close' + '\r\n\r\n'
         full_response = response_header + content
 
         logging.debug(f'Server send Response to client:\n{full_response}')
