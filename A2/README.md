@@ -50,4 +50,3 @@
     ### Content-Disposition
     - get -v -h Content-Disposition:inline 'http://localhost:8080/download'
     
-    - post -h Content-Type:application/json -d '{"": "somethingelse"}' http://localhost:8080/bar

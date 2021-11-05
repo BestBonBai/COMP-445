@@ -8,6 +8,7 @@ COMP 445 lab assignment 2
 import logging
 import os
 import re
+import threading
 class FileOperation:
     '''
     The class is to store different operations of File Manager.
@@ -24,6 +25,8 @@ class FileManager:
     '''
     The class is to manager files in the data directory.
     '''
+    lock = threading.Lock()
+
     def __init__(self):
         # init status is 404 
         self.status = '404'
@@ -64,12 +67,13 @@ class FileManager:
         if len(file_list) > 0:
             # find file
             if file_name in file_list:
+                FileManager.lock.acquire()
                 try:
                     with open(dir_path + '/' + file_name, 'r', errors="ignore") as f:
                         content = f.read()
                 finally:
-                    # FileManager.lock.release()
-                    pass
+                    FileManager.lock.release()
+                   
                 self.status = '200'
                 self.content = content
 
@@ -129,6 +133,7 @@ class FileManager:
         if len(file_list)>0:
             # TODO: change type formate By Content-Type
             # TODO: Consider Thread Lock
+            FileManager.lock.acquire()
             try:
                 # creae or overwrite the file named file_name
                 with open(dir_path + '/' + file_name, 'w') as f:
@@ -141,6 +146,7 @@ class FileManager:
                 # set status and content of the response
                 self.status = '200'
                 self.content = f'Success to write content into \'{dir_path}/{file_name}\' '
+                FileManager.lock.release()
             
             
         else:
