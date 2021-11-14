@@ -46,7 +46,7 @@
     - post -h Content-Type:application/json -d '{"Assignment": 2}' http://localhost:8080/data3/bbb
     ### Get different Content Type
     - get -h Content-Type:application/json 'http://localhost:8080/'
-    - get -h Content-Type:text/xml 'http://localhost:8080/'
+    
     ### Content-Disposition
     - get -v -h Content-Disposition:inline 'http://localhost:8080/download'
     
