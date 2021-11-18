@@ -28,10 +28,10 @@
 
 ### Usage of Assignment 3
 1. Step 1: Run the router on the same or different host
-   See the router's README
+   - See the router's README
    ### Test cases
-   run `./router`
-   run ` ./router --port=3000 --drop-rate=0.2 --max-delay=10ms --seed=1 `
+   - run `./router`
+   - run ` ./router --port=3000 --drop-rate=0.2 --max-delay=10ms --seed=1 `
 
 
 
@@ -44,7 +44,7 @@
 
 3. Step 3: Run the client
    run `python httpc.py`, follow the prompt (`httpc`), input one of the following test codes:
-   **NOTE** You need to send your msg when `httpfs` is listening port instead of **TimeOut**
+   - **NOTE** You need to send your msg when `httpfs` is listening port instead of **TimeOut**
 ## Some Test Cases of HttpClient
 ### Basic Get
 - get -v 'http://localhost:8080/get?course=networking&assignment=1'
