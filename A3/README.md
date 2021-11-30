@@ -20,11 +20,13 @@
 - FileManager.py
 - config.py
 - packet.py
-- Window.py
-- UdpLibrary.py
+- SlidingWindow.py
+- UdpUnit.py
 - [router]
     - router (Need to Install Go)
 - [data]
+   - bar
+   - foo
 
 ### Usage of Assignment 3
 1. Step 1: Run the router on the same or different host
