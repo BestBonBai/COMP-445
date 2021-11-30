@@ -14,8 +14,9 @@ import socket
 from urllib.parse import urlparse
 from HttpClient import HttpRequest, HttpResponse
 import shlex # ignore the space in quotes " x x"
-from UdpLibrary import *
-
+import logging
+# from UdpLibrary import *
+from UdpUnit import *
 class Httpc(cmd.Cmd):
     """ 
     The HttpcLibrary class is to implement cURL command line with basic functions.
@@ -40,6 +41,18 @@ class Httpc(cmd.Cmd):
     intro = "\033[1;33;40m{}\033[0m".format(title)
     prompt = 'httpc '
 
+    def _config_logging(self, verbose):
+        '''
+        The method is to config logging.
+        :param: verbose
+        :return: logger
+        '''
+        FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
+        if verbose:
+            logging.basicConfig(format=FORMAT, datefmt='%Y/%m/%d %H:%M:%S', stream=sys.stdout, level=logging.DEBUG)
+        else:
+            logging.basicConfig(format=FORMAT, datefmt='%Y/%m/%d %H:%M:%S', stream=sys.stdout, level=logging.INFO)
+        
 
     # basic httpc help menu
     def do_help(self, arg):
@@ -135,6 +148,9 @@ class Httpc(cmd.Cmd):
         print("[Debug] args are : " + str(args) )
         # print(args.url)
 
+        # set logging config
+        self._config_logging(args.verbose)
+        
         # Check the URL is valid
         if self._is_valid_url(args.url):
             # recall HttpClient to send Http request
@@ -148,10 +164,9 @@ class Httpc(cmd.Cmd):
             while True:    
                 # get request  
                 request = self._get_request(url_parsed,args,'GET')
-                # Implement UDP
-                client_udp = UdpLibrary()
+                
                 # use socket to connect server, get response
-                response_content = self._client_socket_connect_server(client_udp,request)
+                response_content = self._client_socket_connect_server(request)
                 # print Output in the console depends on diffenrent requirements (-v)
                 self._print_details_by_verbose(args.verbose,response_content)
                 # check whether code is 3xx or not
@@ -167,8 +182,6 @@ class Httpc(cmd.Cmd):
                     print('\n[Debug] --- End ---\n')
                     break
             
-            # disconnect
-            client_udp.close_connect()
             # if -o, write to output.txt
             if args.output:
                 self._output_file(args, response_content)
@@ -269,28 +282,59 @@ class Httpc(cmd.Cmd):
 
         return request
 
-    def _client_socket_connect_server(self, client_udp, request):
+    def _client_socket_connect_server(self, request):
         '''
         The method is to connect server using client socket.
         :param: client_udp
         :param: request
         :return: response_content
         '''
-        # Implement UDP
-        # client_udp = UdpLibrary()
-        client_udp.connect_server()
-        # send request
-        client_udp.send_msg(request.encode("utf-8"))
-        # receive response
-        data = client_udp.recv_msg()
-        if data is None:
-            logging.debug('Client did not receive response')
-            print('[Debug] Client did not receive response')
-            # sys.exit(0)
-        # decode data, and then parse content
-        response_content = HttpResponse(data)
+        try:
+            # Implement UDP
+            # client_udp = UdpLibrary()
+            client_udp = UdpUnit()
+            while True:
+                if client_udp.connect_server():
+                    # send request
+                    logging.debug(f'request is type {type(request)}')
+                    break
+                # consider miss client request, need resend
+                
+                # pkt = client_udp.pkt_builder.build(PACKET_TYPE_DATA, 0, request.encode("utf-8"))
+                # client_udp.conn.sendto(pkt.to_bytes(), client_udp.router_addr) 
+                
+                # client send response
+                
+            while True:
+                
+                if client_udp.client_send_request(request):
+                
+                    # receive response
+                    data = client_udp.recv_msg()
+                    if data is None:
+                        logging.debug('Client did not receive response')
+                        print('[Debug] Client did not receive response')
+                        sys.exit(0)
+                    # decode data, and then parse content
+                    response_content = HttpResponse(data)
+                    
+                    client_udp.close_connect()
+                    return response_content
+                else:
+                    while True:
+                        client_udp.connect_server()
+            # else:
+            #     logging.debug('Client Fail to send response to server')
         
-        return response_content
+            # else:
+            #     logging.debug('Fail to connect to server.')
+            #     sys.exit(0)
+            
+        except Exception as e:
+            logging.debug('Error: {}'.format(e))
+            
+        
+        
 
         
         # use socket to connect server, socket.SOCK_STREAM is for TCP
@@ -399,6 +443,10 @@ class Httpc(cmd.Cmd):
         # test
         # parser_post.print_help()
         
+        # set logging config
+        self._config_logging(args.verbose)
+        
+        
         # Check the URL is valid
         if self._is_valid_url(args.url):
             # recall HttpClient to send Http request
@@ -413,9 +461,9 @@ class Httpc(cmd.Cmd):
                 # get request  
                 request = self._get_request(url_parsed,args,'POST')
                 # Implement UDP
-                client_udp = UdpLibrary()
+                
                 # use socket to connect server, get response
-                response_content = self._client_socket_connect_server(client_udp,request)
+                response_content = self._client_socket_connect_server(request)
                 # print Output in the console depends on diffenrent requirements (-v)
                 self._print_details_by_verbose(args.verbose,response_content)
                 # check whether code is 3xx or not
@@ -432,9 +480,7 @@ class Httpc(cmd.Cmd):
                 else:
                     # other code cases
                     print('\n[Debug] --- End ---\n')
-                    break        
-            # disconnet
-            client_udp.close_connect()         
+                    break               
 
             if args.output:
                 # if -o filename, write to the specified file

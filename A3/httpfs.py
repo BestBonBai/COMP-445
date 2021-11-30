@@ -17,7 +17,8 @@ import logging
 from HttpServer import HttpMethod, HttpRequestParser
 from FileManager import FileOperation, FileManager
 
-from UdpLibrary import *
+# from UdpLibrary import *
+from UdpUnit import *
 
 class Httpfs(cmd.Cmd):
     """ 
@@ -164,7 +165,7 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
             # self._run_server('localhost',args.port, args.dir)
             self._run_server_udp(args.dir)
         except Exception as e:
-            print(f'[Error] {e}')  
+            print(f'[Error] {e}') 
             return
 
     def _run_server_udp(self, dir_path):
@@ -172,28 +173,35 @@ usage: httpfs [-v] [-p PORT] [-d PATH-TO-DIR]
         The method is to implement UDP in A3
         '''
         # UDP
-        try:
-            while True:
-                server_udp = UdpLibrary()
-                # if not server_udp.connect_client():
-                #     # sys.exit(0)
-                #     logging.debug('Fail to connect client...')
-                server_udp.connect_client()
+        # server_udp = UdpUnit()
+        # server_udp.run_server()
+        
+        while True:
+            # server_udp = UdpLibrary()
+            server_udp = UdpUnit()
+            server_udp.run_server()
+            
+            # mimic TCP 3-way handshaking
+            if server_udp.connect_client():
                 
-                data = server_udp.recv_msg()
-                if data is not None:
+                # if client_request is not None:
+                client_request = None
+                while client_request is None:
+                    client_request = server_udp.server_response()
+                    if client_request is not None:
+                        logging.debug(f'Received Client request is :\n{client_request}')
+                        # Parse Request
+                        request_parser = HttpRequestParser(client_request.decode("utf-8"))
+                        server_response = self._get_response(request_parser, dir_path)
+                        # send msg
+                        server_udp.send_msg(server_response.encode("utf-8"))
+                    logging.debug('try to receiving request...')
+                            
+          
                     
-                    client_request = data.decode("utf-8")
-                    logging.debug(f'Received Client request is :\n{client_request}')
-                    
-                    # Parse Request
-                    request_parser = HttpRequestParser(client_request)
-                    server_response = self._get_response(request_parser, dir_path)
-                    
-                    # send msg
-                    server_udp.send_msg(server_response.encode("utf-8"))
-        finally:    
-            server_udp.close_connect()
+                
+        
+           
     
     
     def _run_server(self, host, port, dir_path):
