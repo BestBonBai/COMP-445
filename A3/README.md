@@ -31,9 +31,11 @@
    - See the router's README
    ### Test cases
    - run `./router`
-   - run ` ./router --port=3000 --drop-rate=0.2 --max-delay=10ms --seed=1 `
-
-
+   - run ` ./router --drop-rate=0.5 --seed=3 `
+   - run ` ./router --drop-rate=0.5 --seed=1 ` (case: client request is dropped)
+   - run ` ./router --max-delay=5ms --seed=0 `
+   - run ` ./router --drop-rate=0.2 --max-delay=2ms --seed=1 `
+   - run ` ./router --drop-rate=0.5 --max-delay=1ms --seed=1 `
 
 2. Step 2: Run the server
    run `python httpfs.py`, follow the prompt (`httpfs`), input one of the following test codes:
@@ -46,26 +48,10 @@
    run `python httpc.py`, follow the prompt (`httpc`), input one of the following test codes:
    - **NOTE** You need to send your msg when `httpfs` is listening port instead of **TimeOut**
 ## Some Test Cases of HttpClient
-### Basic Get
-- get -v 'http://localhost:8080/get?course=networking&assignment=1'
-- get -v -h key1:value1 'http://localhost:8080/get?course=networking&assignment=1'
-
-### Get File Manager
-- get 'http://localhost:8080/'
+### Get File Manager : read content of a file and listing files
 - get -v 'http://localhost:8080/'
 - get -v 'http://localhost:8080/foo' (Server uses default dir `data`)
-- get -v 'http://localhost:8080/../README.md' (Test Secure Access: Server uses default dir `data`)[Method : Check path is correct]
 
-### Post File Manager
-- post -h Content-Type:application/json -d '{"Assignment": 2}' http://localhost:8080/bar
+### Post File Manager : create a new file
+- post -v -h Content-Type:application/json -d '{"Assignment": 3}, {"Test":"post"}' http://localhost:8080/bar
 
-#### Test: Invalid woring directory
-- post -h Content-Type:application/json -d '{"Assignment": 2}' http://localhost:8080/../bbb
-#### Test: File Not Found Error, even through in valid working directory.
-- post -h Content-Type:application/json -d '{"Assignment": 2}' http://localhost:8080/data3/bbb
-
-### Get different Content Type
-- get -h Content-Type:application/json 'http://localhost:8080/'
-
-### Content-Disposition
-- get -v -h Content-Disposition:inline 'http://localhost:8080/download'
