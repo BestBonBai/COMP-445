@@ -9,13 +9,11 @@ class Packet:
     Modified by EXAMPLE, add param (is_last_packet).
     """
 
-    def __init__(self, packet_type, seq_num, peer_ip_addr, peer_port, is_last_packet, payload):
+    def __init__(self, packet_type, seq_num, peer_ip_addr, peer_port, payload):
         self.packet_type = int(packet_type)
         self.seq_num = int(seq_num)
         self.peer_ip_addr = peer_ip_addr
         self.peer_port = int(peer_port)
-        # boolean param (is_last_packet) is to check if the packet is last one.
-        self.is_last_packet = is_last_packet
         self.payload = payload
 
     def to_bytes(self):
@@ -27,16 +25,12 @@ class Packet:
         buf.extend(self.seq_num.to_bytes(4, byteorder='big'))
         buf.extend(self.peer_ip_addr.packed)
         buf.extend(self.peer_port.to_bytes(2, byteorder='big'))
-        # add last_packet
-        last_packet = 1 if self.is_last_packet else 0
-        buf.extend(last_packet.to_bytes(1, byteorder='big'))
-
         buf.extend(self.payload)
 
         return buf
 
     def __repr__(self, *args, **kwargs):
-        return "#%d, peer=%s:%s, size=%d" % (self.seq_num, self.peer_ip_addr, self.peer_port, len(self.payload))
+        return "#=%d, type=%d ,seq_num=%d, peer=%s:%s, size=%d" % (self.seq_num, self.packet_type, self.seq_num, self.peer_ip_addr, self.peer_port, len(self.payload))
 
     @staticmethod
     def from_bytes(raw):
@@ -67,8 +61,6 @@ class Packet:
         peer_addr = ipaddress.ip_address(nbytes(4))
         peer_port = int.from_bytes(nbytes(2), byteorder='big')
         # last_packet: 0 is False, 1 is True
-        last_packet = int.from_bytes(nbytes(1),byteorder='big')
-        is_last_packet = (last_packet == 1)
         
         payload = raw[curr[1]:]
 
@@ -76,7 +68,6 @@ class Packet:
                       seq_num=seq_num,
                       peer_ip_addr=peer_addr,
                       peer_port=peer_port,
-                      is_last_packet=is_last_packet,
                       payload=payload)
 
 
@@ -88,11 +79,11 @@ class PacketBuilder:
         self.peer_addr = peer_addr
         self.peer_port_num = peer_port_num
     
-    def build(self, packet_type, seq_num=0, payload="", is_last = False):
+    def build(self, packet_type, seq_num=0, payload=""):
         '''
         The method is to build a Packet.
         :return: Packet (Obj)
         '''
-        return Packet(packet_type, seq_num, self.peer_addr, self.peer_port_num, is_last, payload)
+        return Packet(packet_type, seq_num, self.peer_addr, self.peer_port_num, payload)
         
         
