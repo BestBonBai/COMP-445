@@ -320,9 +320,9 @@ class Httpc(cmd.Cmd):
                     
                     client_udp.close_connect()
                     return response_content
-                else:
-                    while True:
-                        client_udp.connect_server()
+                # else:
+                #     while True:
+                #         client_udp.connect_server()
             # else:
             #     logging.debug('Client Fail to send response to server')
         
